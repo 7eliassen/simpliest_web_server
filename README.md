@@ -1,5 +1,5 @@
-##Simple web server on C.
-Just for fun, not for prod.
+# Simple web server on C.
+## Just for fun, not for prod.
 
 processes only GET requests
 
