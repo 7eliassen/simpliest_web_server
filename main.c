@@ -105,9 +105,9 @@ int main(int argc, char** argv)
     //Setting paths to folders
     getcwd(current_directory, sizeof(current_directory));
     sprintf(files_directory, "%s/files/", current_directory);
-    sprintf(settings_redirect, "%ssettings/redirects.settings", files_directory);
 
     //Import redirection options from settings/redirects.setting
+    sprintf(settings_redirect, "%ssettings/redirects.settings", files_directory);
     char **red_keys;
     char **red_meanings;
     red_keys_ptr = red_keys;
@@ -158,19 +158,33 @@ int main(int argc, char** argv)
 
 
 
+    bool redirect = false;
+    char * bu = NULL;
+    char * cont_type = NULL;
+    char *file_path = NULL;
+    char *file = NULL;
+    int code_of_error =  0;
+    struct sockaddr_in* pV4Addr;
+    struct in_addr ipAddr;
+
     // ---------------------------------------------------------------------------MAIN CYCLE---------------------------------------------------------------------------
     while(true) {
         //Accept the connection
         int new_socket = accept(socketFD, address, &addrlen);
 
-        inet_ntop(port, &address->sin_addr, client_ip, INET_ADDRSTRLEN);
+        pV4Addr = (struct sockaddr_in*) address;
+        ipAddr = pV4Addr->sin_addr;
 
-        bool redirect = false;
-        char * bu = NULL;
-        char * cont_type = NULL;
-        char *file_path = NULL;
-        char *file = NULL;
+        bzero(client_ip, INET_ADDRSTRLEN);
+        inet_ntop(AF_INET, &ipAddr, client_ip, INET_ADDRSTRLEN);
 
+        redirect = false;
+        bu = NULL;
+        cont_type = NULL;
+        file_path = NULL;
+        file = NULL;
+
+        code_of_error = 0;
 
         if (new_socket < 0) {
             printf("[-] error accept\n");
@@ -185,9 +199,9 @@ int main(int argc, char** argv)
 
         //Get path from http request
         char *path = get_path(buffer, valread);
-        if (path == NULL)
+        if (path == NULL) {
             continue;
-
+        }
         //START REDIRECT block
         //
         //TODO: REMAKE THIS SHIT!!!
@@ -222,13 +236,13 @@ int main(int argc, char** argv)
             printf("[*] path = %s\n", path);
 
             //webfolder + path
-            char *file_path = path_to_file(path, files_directory);
+            file_path = path_to_file(path, files_directory);
             printf("[*] file_path = %s\n", file_path);
 
 
 
             //Read file
-            int code_of_error = 0;
+            code_of_error = 0;
             file = readFile(file_path, &code_of_error);
 
 
@@ -243,8 +257,8 @@ int main(int argc, char** argv)
             if (file == NULL || file_path == NULL || strcmp(cont_type, "ERROR") == 0) {
                 printf("[-] file :%s 404_Not_Found", path);
                 file_path = path_to_file("/404.html", files_directory);
-                int code_of_error = 0;
-                char *file = readFile(file_path, &code_of_error);
+                code_of_error = 0;
+                file = readFile(file_path, &code_of_error);
                 if (file==NULL) {
                     file = "404ERROR_Not_Found\n";
                     printf("[-] Pls make 404.html ;)\n");
